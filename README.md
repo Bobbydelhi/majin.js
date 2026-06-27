@@ -1,5 +1,9 @@
 # Majin.js
 
+<p align="center">
+  <img src="https://i.pinimg.com/originals/1a/f9/96/1af996027b95b20915dff62677f3fc2d.gif" alt="Majin Buu" width="250"/>
+</p>
+
 A zero-dependency, insanely lightweight, reactive JavaScript framework built from absolute zero. 
 
 **Note: This project is in Day 0. It is currently being architected and built from scratch as part of a university thesis to prove the power of open-source community collaboration.**
