@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Bobbydelhi/main.js.git"
+    "url": "git+https://github.com/Bobbydelhi/majin.js.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/Bobbydelhi/main.js/issues"
+    "url": "https://github.com/Bobbydelhi/majin.js/issues"
   },
-  "homepage": "https://github.com/Bobbydelhi/main.js#readme"
+  "homepage": "https://github.com/Bobbydelhi/majin.js#readme"
 }
