@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Majin.js - All-in-One Demo</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background: #0f172a; color: #f8fafc; }
+    .card { background: #1e293b; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #334155; }
+    input { padding: 8px; margin-right: 10px; border: 1px solid #475569; background: #0f172a; color: white; border-radius: 4px; }
+    button { padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #2563eb; }
+    .danger { background: #ef4444; }
+    .danger:hover { background: #dc2626; }
+    h2 { margin-top: 0; color: #60a5fa; }
+    hr { border-color: #334155; margin: 40px 0; }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== DOCUMENTACIÓN (INLINE) ==================== -->
+  <div class="card" style="border-left: 4px solid #10b981;">
+    <h2>🧞‍♂️ Majin.js - Versión All-in-One</h2>
+    <p>Este archivo contiene <strong>absolutamente TODO</strong> en un solo documento HTML: El Core del Framework, el HTML de la vista, los estilos CSS y la inicialización de la instancia.</p>
+    <p><strong>Cero dependencias, cero imports, un solo archivo listo para usar.</strong></p>
+  </div>
+
+  <hr>
+
+  <!-- ==================== APLICACIÓN VISTA (DOM) ==================== -->
+  <div id="app">
+    
+    <!-- Demo 1: Binding Bidireccional -->
+    <div class="card">
+      <h2>1. Binding Bidireccional (m-model)</h2>
+      <input type="text" m-model="user.name" placeholder="Escribe tu nombre">
+      <p>Hola, <strong m-bind="user.name"></strong>!</p>
+    </div>
+
+    <!-- Demo 2: Contador y Eventos -->
+    <div class="card">
+      <h2>2. Eventos y Estado (m-on:click)</h2>
+      <p>Clicks actuales: <strong m-bind="clicks"></strong></p>
+      <button m-on:click="incrementar">Sumar +1</button>
+      <button m-on:click="resetear" class="danger">Resetear</button>
+    </div>
+
+    <!-- Demo 3: Array Reactivo -->
+    <div class="card">
+      <h2>3. Array Reactivo</h2>
+      <input type="text" m-model="newItem" placeholder="Nuevo item">
+      <button m-on:click="agregarItem">Añadir al carrito</button>
+      <button m-on:click="eliminarItem" class="danger">Eliminar último</button>
+      <p>Total items: <strong m-bind="cart.length"></strong></p>
+      <p>Contenido: <span m-bind="cart"></span></p>
+    </div>
+  </div>
+
+  <!-- ==================== CORE FRAMEWORK & INICIALIZACIÓN ==================== -->
+  <script>
+    // 1. EL CORE DE MAJIN.JS (Embebido directamente)
+    class Majin {
+      #el;
+      #data;
+      #methods;
+      #boundElements = new Map();
+      #renderQueued = false;
+
+      constructor({ el, data = {}, methods = {} }) {
+        this.#el = typeof el === 'string' ? document.querySelector(el) : el;
+        this.#methods = methods;
+        
+        if (!this.#el) {
+          console.error('[Majin] Elemento raíz no encontrado.');
+          return;
+        }
+
+        this.data = this.#createProxy(data);
+        this.#compile(this.#el);
+        this.#render();
+      }
+
+      #createProxy(targetObj, basePath = '') {
+        const self = this;
+        return new Proxy(targetObj, {
+          get(target, property) {
+            const value = target[property];
+            if (typeof value === 'object' && value !== null) {
+              const newPath = basePath ? `${basePath}.${property}` : property;
+              return self.#createProxy(value, newPath);
+            }
+            return value;
+          },
+          set(target, property, value) {
+            target[property] = value;
+            self.#queueRender();
+            return true;
+          }
+        });
+      }
+
+      #compile(node) {
+        if (node.nodeType === Node.TEXT_NODE) return;
+
+        if (node.attributes) {
+          const attrs = Array.from(node.attributes);
+          for (const attr of attrs) {
+            if (attr.name === 'm-bind') {
+              this.#addBoundElement('bind', attr.value, node);
+            } 
+            else if (attr.name === 'm-model') {
+              this.#addBoundElement('model', attr.value, node);
+              node.addEventListener('input', (e) => {
+                this.#setValue(this.data, attr.value, e.target.value);
+              });
+            } 
+            else if (attr.name.startsWith('m-on:')) {
+              const eventName = attr.name.substring(5);
+              const methodName = attr.value;
+              if (this.#methods[methodName]) {
+                node.addEventListener(eventName, (e) => {
+                  this.#methods[methodName].call({ data: this.data }, e);
+                });
+              } else {
+                console.warn(`[Majin] Método '${methodName}' no definido en methods.`);
+              }
+            }
+          }
+        }
+        node.childNodes.forEach(child => this.#compile(child));
+      }
+
+      #addBoundElement(type, path, node) {
+        if (!this.#boundElements.has(path)) {
+          this.#boundElements.set(path, []);
+        }
+        this.#boundElements.get(path).push({ type, node });
+      }
+
+      #queueRender() {
+        if (this.#renderQueued) return;
+        this.#renderQueued = true;
+        requestAnimationFrame(() => {
+          this.#render();
+          this.#renderQueued = false;
+        });
+      }
+
+      #render() {
+        this.#boundElements.forEach((bindings, path) => {
+          const value = this.#getValue(this.data, path);
+          bindings.forEach(({ type, node }) => {
+            if (type === 'bind') {
+              const displayValue = Array.isArray(value) ? value.join(', ') : (value ?? '');
+              if (node.textContent !== displayValue) {
+                node.textContent = displayValue;
+              }
+            } 
+            else if (type === 'model') {
+              if (node.value !== value) {
+                node.value = value;
+              }
+            }
+          });
+        });
+      }
+
+      #getValue(obj, path) {
+        return path.split('.').reduce((acc, key) => (acc !== undefined && acc !== null ? acc[key] : undefined), obj);
+      }
+
+      #setValue(obj, path, value) {
+        const keys = path.split('.');
+        const lastKey = keys.pop();
+        const target = keys.reduce((acc, key) => (acc || {})[key], obj);
+        if (target) {
+          target[lastKey] = value;
+        }
+      }
+    }
+
+    // 2. INICIALIZACIÓN DE LA APLICACIÓN
+    new Majin({
+      el: '#app',
+      data: {
+        user: { name: 'Admin' },
+        clicks: 0,
+        newItem: '',
+        cart: ['Manzana', 'Monitor Ulrawide']
+      },
+      methods: {
+        incrementar() {
+          this.data.clicks++;
+        },
+        resetear() {
+          this.data.clicks = 0;
+        },
+        agregarItem() {
+          if (this.data.newItem.trim() === '') return;
+          this.data.cart.push(this.data.newItem);
+          this.data.newItem = '';
+        },
+        eliminarItem() {
+          this.data.cart.pop();
+        }
+      }
+    });
+  </script>
+</body>
+</html>

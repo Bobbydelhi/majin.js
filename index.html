@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Majin.js v1 - Next Level Frontend</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+    
+    :root { --bg: #0f172a; --panel: #1e293b; --accent: #3b82f6; --text: #f8fafc; --danger: #ef4444; --success: #10b981; --warning: #eab308; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 2rem; max-width: 1000px; margin: auto; }
+    .header { border-bottom: 1px solid #334155; padding-bottom: 1rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { margin: 0; font-weight: 800; font-size: 2rem; }
+    
+    .grid { display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; }
+    .panel { background: var(--panel); padding: 1.5rem; border-radius: 12px; border: 1px solid #334155; }
+    .panel h3 { margin-top: 0; color: #cbd5e1; border-bottom: 1px solid #334155; padding-bottom: 0.5rem; }
+    
+    input[type="text"] { width: 100%; box-sizing: border-box; padding: 0.75rem; background: var(--bg); border: 1px solid #475569; color: var(--text); border-radius: 6px; margin-bottom: 1rem; }
+    
+    button { background: var(--accent); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    button:hover { filter: brightness(1.2); }
+    
+    .list-item { display: flex; justify-content: space-between; padding: 0.75rem; background: #0f172a; margin-bottom: 0.5rem; border-radius: 6px; border-left: 4px solid #475569; transition: 0.3s; }
+    
+    /* Dynamic Classes Demo */
+    .status-critical { border-left-color: var(--danger); }
+    .status-warning { border-left-color: var(--warning); }
+    .status-info { border-left-color: var(--accent); }
+    
+    .log-msg { font-family: monospace; font-size: 0.9rem; }
+    .delete-btn { background: transparent; color: var(--danger); padding: 0; margin-left: 10px; }
+    .delete-btn:hover { background: rgba(239, 68, 68, 0.2); }
+  </style>
+</head>
+<body>
+
+  <div id="app">
+    <div class="header">
+      <div>
+        <h1>System Logs <span style="color:var(--accent)">Dashboard</span></h1>
+        <p>Total Events: <strong m-bind="logs.length"></strong></p>
+      </div>
+      <!-- Expression directly in m-on -->
+      <button m-on:click="logs.push({ type: 'info', msg: 'Manual refresh requested' })">Ping System</button>
+    </div>
+
+    <div class="grid">
+      
+      <!-- CONTROLS -->
+      <div class="panel">
+        <h3>Inject Log</h3>
+        
+        <label>Message:</label>
+        <!-- m-ref demo: we can focus this from a method -->
+        <input m-ref="logInput" m-model="newLogMsg" type="text" placeholder="Type event...">
+        
+        <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
+          <input m-model="isCritical" type="checkbox">
+          Mark as Critical
+        </label>
+        
+        <button m-on:click="addLog">Add Event</button>
+      </div>
+
+      <!-- LOG LIST (m-for DEMO) -->
+      <div class="panel">
+        <h3>Live Event Stream</h3>
+        
+        <div m-if="logs.length === 0" style="color: #94a3b8; text-align: center; padding: 2rem;">
+          No events recorded.
+        </div>
+
+        <!-- m-for and m-class demo -->
+        <div m-for="log in logs" 
+             class="list-item" 
+             m-class="{ 'status-critical': log.type === 'critical', 'status-info': log.type === 'info' }">
+          
+          <span class="log-msg">
+            <strong m-bind="log.type.toUpperCase()"></strong>: <span m-bind="log.msg"></span>
+          </span>
+          
+          <!-- Accessing the loop index natively -->
+          <button class="delete-btn" m-on:click="removeLog(index)">✕</button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
+  <script type="module">
+    import Majin from './majin.js';
+
+    new Majin({
+      el: '#app',
+      data: {
+        logs: [
+          { type: 'info', msg: 'System booted successfully' },
+          { type: 'critical', msg: 'Database connection timeout' }
+        ],
+        newLogMsg: '',
+        isCritical: false
+      },
+      methods: {
+        addLog() {
+          if (!this.data.newLogMsg.trim()) {
+            // m-ref demonstration: direct DOM access
+            this.$refs.logInput.focus();
+            return;
+          }
+          
+          this.data.logs.unshift({
+            type: this.data.isCritical ? 'critical' : 'info',
+            msg: this.data.newLogMsg
+          });
+          
+          this.data.newLogMsg = '';
+          this.data.isCritical = false;
+          this.$refs.logInput.focus();
+        },
+        removeLog(e, localScope) {
+          // Splice triggers array reactivity!
+          this.data.logs.splice(localScope.index, 1);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

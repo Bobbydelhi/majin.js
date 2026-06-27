@@ -1,0 +1,21 @@
+{
+  "name": "majin",
+  "version": "1.0.0",
+  "description": "Majin.js is a radically opinionated, insanely lightweight reactive frontend framework designed for performance purists. It brings modern reactivity paradigms to the browser without the bloatware of a Virtual DOM.",
+  "main": "majin.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bobbydelhi/main.js.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Bobbydelhi/main.js/issues"
+  },
+  "homepage": "https://github.com/Bobbydelhi/main.js#readme"
+}
